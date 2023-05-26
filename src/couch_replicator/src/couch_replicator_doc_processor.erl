@@ -160,7 +160,7 @@ maybe_remove_state_fields(DbName, DocId) ->
             couch_replicator_docs:remove_state_fields(DbName, DocId)
     end.
 
-process_updated({DbName, _DocId} = Id, JsonRepDoc) ->
+process_updated({DbName, DocId} = Id, JsonRepDoc) ->
     % Parsing replication doc (but not calculating the id) could throw an
     % exception which would indicate this document is malformed. This exception
     % should propagate to db_change function and will be recorded as permanent
@@ -168,6 +168,7 @@ process_updated({DbName, _DocId} = Id, JsonRepDoc) ->
     % problem.
     Rep0 = couch_replicator_parse:parse_rep_doc_without_id(JsonRepDoc),
     Rep = Rep0#rep{db_name = DbName, start_time = os:timestamp()},
+    ok = couch_replicator_utils:log_security_warnings(Rep#rep{doc_id = DocId}),
     Filter =
         case couch_replicator_filters:parse(Rep#rep.options) of
             {ok, nil} ->
